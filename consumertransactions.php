@@ -8,8 +8,8 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -273,7 +273,7 @@ class Consumertransactions extends Module
             
             if(Tools::getValue('k') == $key){
                 
-                var_dump('funcionando!');
+                // var_dump('funcionando!');
 
                 // obtenemos el lenguaje para saber el pais a enviar
                 $languages = Language::getLanguages(true, $this->context->shop->id);
@@ -310,7 +310,7 @@ class Consumertransactions extends Module
 
                     if (!empty($orderstoSend)){
 
-                        var_dump('Nuevos registros...');
+                        // var_dump('Nuevos registros...');
 
                         // si no existe se crea el directorio para guardar los reportes
                         if (!file_exists('DGL')) {
@@ -322,7 +322,7 @@ class Consumertransactions extends Module
                         if($archivo_csv)
                         {
                             self::logtxt("1-El archivo se creo exitoso!");
-                            var_dump('1-El archivo se creo exitoso!');
+                            // var_dump('1-El archivo se creo exitoso!');
 
                             fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);  
 
@@ -405,14 +405,14 @@ class Consumertransactions extends Module
                                     fclose($archivo_csv);
                                     if ($updateFile == true) {
                                         self::logtxt("2-El archivo se actualizo!");
-                                        var_dump('2-El archivo se actualizo!');
+                                        // var_dump('2-El archivo se actualizo!');
                                     }else {
                                         self::logtxt("2-El archivo no se pudo actualizar!");
-                                        var_dump('2-El archivo no se pudo actualizar!');
+                                        // var_dump('2-El archivo no se pudo actualizar!');
                                     }
                                 }else{
                                     self::logtxt("2-El archivo no existe");
-                                    var_dump('2-El archivo no existe');
+                                    // var_dump('2-El archivo no existe');
                                 }
         
         
@@ -446,7 +446,7 @@ class Consumertransactions extends Module
 
                             if ($email != false) {
                                 self::logtxt("Email enviado exitoso!!");
-                                var_dump('Email enviado exitoso!!');
+                                // var_dump('Email enviado exitoso!!');
 
                                 foreach ($orderstoSend as $key => $order) {
 
@@ -477,13 +477,13 @@ class Consumertransactions extends Module
             
                                     if ($result == true){
                                         self::logtxt("Registros guardados al history con exito");
-                                        var_dump("Registros guardados al history con exito");
+                                        // var_dump("Registros guardados al history con exito");
                                     }else {
                                         if ($error != ''){
                                             self::logtxt($error);
                                         }
                                         self::logtxt("Hubo un error al intentar guardar en el history");
-                                        var_dump("1-Hubo un error al intentar guardar en el history");
+                                        // var_dump("1-Hubo un error al intentar guardar en el history");
                                     }
             
                                     // var_dump($result);
@@ -492,18 +492,18 @@ class Consumertransactions extends Module
 
                             }else {
                                 self::logtxt("Error, email no pudo ser enviado!!");
-                                var_dump('Error, email no pudo ser enviado!!');
+                                // var_dump('Error, email no pudo ser enviado!!');
                             }
 
                         }else{
                             self::logtxt("1-El archivo no existe o no se pudo crear");
-                            var_dump('1-El archivo no existe o no se pudo crear');
+                            // var_dump('1-El archivo no existe o no se pudo crear');
                         }
 
 
                     }else {
                         self::logtxt("No hay registros para enviar...");
-                        var_dump('No hay registros para enviar...');
+                        // var_dump('No hay registros para enviar...');
                     }
 
 
@@ -526,7 +526,7 @@ class Consumertransactions extends Module
 
                     if (!empty($orderstoSend)){
 
-                        var_dump('Nuevos registros...');
+                        // var_dump('Nuevos registros...');
 
                         // si no existe se crea el directorio para guardar los reportes
                         if (!file_exists('DGL')) {
@@ -538,7 +538,7 @@ class Consumertransactions extends Module
                         if($archivo_csv)
                         {
                             self::logtxt("1-El archivo se creo exitoso!");
-                            var_dump('1-El archivo se creo exitoso!');
+                            // var_dump('1-El archivo se creo exitoso!');
 
                             fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);  
 
@@ -621,14 +621,14 @@ class Consumertransactions extends Module
                                     fclose($archivo_csv);
                                     if ($updateFile == true) {
                                         self::logtxt("2-El archivo se actualizo!");
-                                        var_dump('2-El archivo se actualizo!');
+                                        // var_dump('2-El archivo se actualizo!');
                                     }else {
                                         self::logtxt("2-El archivo no se pudo actualizar!");
-                                        var_dump('2-El archivo no se pudo actualizar!');
+                                        // var_dump('2-El archivo no se pudo actualizar!');
                                     }
                                 }else{
                                     self::logtxt("2-El archivo no existe");
-                                    var_dump('2-El archivo no existe');
+                                    // var_dump('2-El archivo no existe');
                                 }
         
                             } // fin foreach orderstoSend
@@ -661,7 +661,7 @@ class Consumertransactions extends Module
 
                             if ($email != false) {
                                 self::logtxt("Email enviado exitoso!!");
-                                var_dump('Email enviado exitoso!!');
+                                // var_dump('Email enviado exitoso!!');
 
                                 foreach ($orderstoSend as $key => $order) {
 
@@ -692,13 +692,13 @@ class Consumertransactions extends Module
             
                                     if ($result == true){
                                         self::logtxt("Registros guardados al history con exito");
-                                        var_dump("Registros guardados al history con exito");
+                                        // var_dump("Registros guardados al history con exito");
                                     }else {
                                         if ($error != ''){
                                             self::logtxt($error);
                                         }
                                         self::logtxt("Hubo un error al intentar guardar en el history");
-                                        var_dump("1-Hubo un error al intentar guardar en el history");
+                                        // var_dump("1-Hubo un error al intentar guardar en el history");
                                     }
             
                                     // var_dump($result);
@@ -707,17 +707,17 @@ class Consumertransactions extends Module
 
                             }else {
                                 self::logtxt("Error, email no pudo ser enviado!!");
-                                var_dump('Error, email no pudo ser enviado!!');
+                                // var_dump('Error, email no pudo ser enviado!!');
                             }
 
                         }else{
                             self::logtxt("1-El archivo no existe o no se pudo crear");
-                            var_dump('1-El archivo no existe o no se pudo crear');
+                            // var_dump('1-El archivo no existe o no se pudo crear');
                         }
 
                     }else {
                         self::logtxt("No hay nuevos registros para enviar...");
-                        var_dump('No hay nuevos registros para enviar...');
+                        // var_dump('No hay nuevos registros para enviar...');
                     }
 
 
