@@ -15,8 +15,7 @@
  */
 $sql = array();
 
-$sql[] = 'DROP TABLE IF EXISTS ` ps_ct_transactions_history`';
-$sql[] = 'DROP TABLE IF EXISTS ` ps_ct_transactions_tmp`';
+$sql[] = 'DROP TABLE IF EXISTS `ps_ct_transactions_history`';
 
 foreach ($sql as $query) {
     if (Db::getInstance()->execute($query) == false) {
