@@ -21,6 +21,7 @@ class Consumertransactions extends Module
 {
     protected $config_form = false;
     private $CONSUMERTRANSACTIONS_LIVE_MODE;
+    private $CONSUMERTRANSACTIONS_ACCOUNT_EMAIL;
     private $CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD;
 
     public function __construct()
@@ -46,6 +47,7 @@ class Consumertransactions extends Module
         $this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
 
         $this->CONSUMERTRANSACTIONS_LIVE_MODE = Configuration::get('CONSUMERTRANSACTIONS_LIVE_MODE');
+        $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL = Configuration::get('CONSUMERTRANSACTIONS_ACCOUNT_EMAIL');
         $this->CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD = Configuration::get('CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD');
 
         if ($this->active && Configuration::get('consumertransactions') == '') {
@@ -56,7 +58,8 @@ class Consumertransactions extends Module
            if ($this->CONSUMERTRANSACTIONS_LIVE_MODE == 1) {
                $this->emailTransactions();
            }
-        //    ?k=Alewushu
+        // ?k=Alewushu
+        // DGLC@nsumerT.2019!
     }
 
     /**
@@ -66,6 +69,7 @@ class Consumertransactions extends Module
     public function install()
     {
         Configuration::updateValue('CONSUMERTRANSACTIONS_LIVE_MODE', false);
+        Configuration::updateValue('CONSUMERTRANSACTIONS_ACCOUNT_EMAIL', '');
         Configuration::updateValue('CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD', '');
 
         include(dirname(__FILE__).'/sql/install.php');
@@ -79,6 +83,7 @@ class Consumertransactions extends Module
     public function uninstall()
     {
         Configuration::deleteByName('CONSUMERTRANSACTIONS_LIVE_MODE');
+        Configuration::deleteByName('CONSUMERTRANSACTIONS_ACCOUNT_EMAIL', '');
         Configuration::deleteByName('CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD', '');
 
         include(dirname(__FILE__).'/sql/uninstall.php');
@@ -151,6 +156,7 @@ class Consumertransactions extends Module
                         'name' => 'CONSUMERTRANSACTIONS_LIVE_MODE',
                         'is_bool' => true,
                         'desc' => $this->l('Use this module in live mode'),
+                        'required' => true,
                         'values' => array(
                             array(
                                 'id' => 'active_on',
@@ -266,6 +272,7 @@ class Consumertransactions extends Module
             $key = $this->CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD;
             
             if(Tools::getValue('k') == $key){
+                
                 var_dump('funcionando!');
 
                 // obtenemos el lenguaje para saber el pais a enviar
@@ -386,9 +393,11 @@ class Consumertransactions extends Module
                                 
                                 // ingresando la data al archivo csv
                                 $values = implode(',', $data1[$key]);
-                                echo "<pre>";
-                                var_dump($values);
-                                echo "</pre>";
+
+                                // echo "<pre>";
+                                // var_dump($values);
+                                // echo "</pre>";
+                                
                                 $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'a');
                                 if($archivo_csv)
                                 {
@@ -406,36 +415,85 @@ class Consumertransactions extends Module
                                     var_dump('2-El archivo no existe');
                                 }
         
-                                // Insertamos data en ct_transactions_history tabla
-                                $result =  Db::getInstance()->insert('ct_transactions_history', array(
-                                    'Country__c' => $country,
-                                    'Contact_Num__c' => $order['note'],
-                                    'Payment_Type__c' => $order['payment'],
-                                    'X1_Product__c' => $order['product_name'],
-                                    'X1_Quantity__c' => $order['product_quantity'],
-                                    'X1_Price__c' => (float)$order['product_price'],
-                                    'X1_SKU__c' => $order['product_reference'],
-                                    'Transaction_Date__c' => $fecha,
-                                    'Delivered__c' => 1,
-                                    'Vendor_Order_Id__c' => $order['reference'],
-                                    'Order_Value__c' => (float)$order['total_paid'],
-                                    'Discount_Applied__c' => (float)$order['product_quantity_discount'],
-                                    'Origin__c' => 'eCommerce',
-                                    'Loyalty_Points__c' => 0,
-                                    'created_date' => date("Y-m-d H:i:s"),
-                                ));
-        
-                                if ($result == true){
-                                    self::logtxt("Registros guardados al history con exito");
-                                    var_dump("Registros guardados al history con exito");
-                                }else {
-                                    self::logtxt("Hubo un error al intentar guardar en el history");
-                                    var_dump("Hubo un error al intentar guardar en el history");
-                                }
-        
-                                // var_dump($result);
         
                             } // fin foreach orderstoSend
+
+                            // Envio del archivo por correo
+                            $email = Mail::Send_dgl(
+                                (int)(Configuration::get('PS_LANG_DEFAULT')), // defaut language id
+                                'dgl_consumer_trans', // email template file to be use
+                                'DGL Consumer Transaction '.date("Y-m-d"), // email subject
+                                array(
+                                    '{email}' => Configuration::get('PS_SHOP_EMAIL'), // sender email address
+                                    '{message}' => 'Hi, attached is the csv file...' // email content
+                                ),
+                                $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL, // receiver email address 
+                                NULL, //receiver name
+                                NULL, //from email address
+                                'Abbott Nutricionales',  //from name
+                                array(
+                                    'content' => file_get_contents(_PS_ROOT_DIR_.'/DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'),
+                                    'mime' => 'text/csv',
+                                    'name' => 'DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'
+                                ),
+                                NULL,  //SMTP mode
+                                NULL,  //Mails directory
+                                NULL,  //Die after error?
+                                NULL,  //ID Shop
+                                'alejandro.villegas@farmalisto.com.co',  //BCC
+                                NULL  //Reply to
+                            );
+
+                            if ($email != false) {
+                                self::logtxt("Email enviado exitoso!!");
+                                var_dump('Email enviado exitoso!!');
+
+                                foreach ($orderstoSend as $key => $order) {
+
+                                    // formateo de fecha
+                                    $fechaHora = $order['date_add'];
+                                    $fechaHora2 = explode(' ', $fechaHora);
+                                    $fecha = $fechaHora2[0];
+
+                                    // Insertamos data en ct_transactions_history tabla
+                                    $result =  Db::getInstance()->insert('ct_transactions_history', array(
+                                        'Country__c' => $country,
+                                        'Contact_Num__c' => $order['note'],
+                                        'Payment_Type__c' => $order['payment'],
+                                        'X1_Product__c' => $order['product_name'],
+                                        'X1_Quantity__c' => $order['product_quantity'],
+                                        'X1_Price__c' => (float)$order['product_price'],
+                                        'X1_SKU__c' => $order['product_reference'],
+                                        'Transaction_Date__c' => $fecha,
+                                        'Delivered__c' => 1,
+                                        'Vendor_Order_Id__c' => $order['reference'],
+                                        'Order_Value__c' => (float)$order['total_paid'],
+                                        'Discount_Applied__c' => (float)$order['product_quantity_discount'],
+                                        'Origin__c' => 'eCommerce',
+                                        'Loyalty_Points__c' => 0,
+                                        'created_date' => date("Y-m-d H:i:s"),
+                                    ));
+                                    $error = Db::getInstance()->getMsgError();
+            
+                                    if ($result == true){
+                                        self::logtxt("Registros guardados al history con exito");
+                                        var_dump("Registros guardados al history con exito");
+                                    }else {
+                                        if ($error != ''){
+                                            self::logtxt($error);
+                                        }
+                                        self::logtxt("Hubo un error al intentar guardar en el history");
+                                        var_dump("1-Hubo un error al intentar guardar en el history");
+                                    }
+            
+                                    // var_dump($result);
+
+                                } // fin foreach
+
+                            }else {
+                                self::logtxt("Error, email no pudo ser enviado!!");
+                                var_dump('Error, email no pudo ser enviado!!');
+                            }
 
                         }else{
                             self::logtxt("1-El archivo no existe o no se pudo crear");
@@ -551,9 +609,11 @@ class Consumertransactions extends Module
                                 
                                 // ingresando la data al archivo csv
                                 $values = implode(',', $data2[$key]);
-                                echo "<pre>";
-                                var_dump($values);
-                                echo "</pre>";
+
+                                // echo "<pre>";
+                                // var_dump($values);
+                                // echo "</pre>";
+
                                 $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'a');
                                 if($archivo_csv)
                                 {
@@ -571,36 +631,84 @@ class Consumertransactions extends Module
                                     var_dump('2-El archivo no existe');
                                 }
         
-                                // Insertamos data en ct_transactions_history tabla
-                                $result =  Db::getInstance()->insert('ct_transactions_history', array(
-                                    'Country__c' => $country,
-                                    'Contact_Num__c' => $order['note'],
-                                    'Payment_Type__c' => $order['payment'],
-                                    'X1_Product__c' => $order['product_name'],
-                                    'X1_Quantity__c' => $order['product_quantity'],
-                                    'X1_Price__c' => (float)$order['product_price'],
-                                    'X1_SKU__c' => $order['product_reference'],
-                                    'Transaction_Date__c' => $fecha,
-                                    'Delivered__c' => 1,
-                                    'Vendor_Order_Id__c' => $order['reference'],
-                                    'Order_Value__c' => (float)$order['total_paid'],
-                                    'Discount_Applied__c' => (float)$order['product_quantity_discount'],
-                                    'Origin__c' => 'eCommerce',
-                                    'Loyalty_Points__c' => 0,
-                                     'created_date' => date("Y-m-d H:i:s"),
-                                ));
-        
-                                if ($result == true){
-                                    self::logtxt("Nuevos registros guardados al history con exito");
-                                    var_dump("Nuevos registros guardados al history con exito");
-                                }else {
-                                    self::logtxt("Hubo un error al intentar guardar en el history");
-                                    var_dump("Hubo un error al intentar guardar en el history");
-                                }
-        
-                                // var_dump($result);
-        
                             } // fin foreach orderstoSend
+
+                            // Envio del archivo por correo
+                            $email = Mail::Send_dgl(
+                                (int)(Configuration::get('PS_LANG_DEFAULT')), // defaut language id
+                                'dgl_consumer_trans', // email template file to be use
+                                'DGL Consumer Transaction '.date("Y-m-d"), // email subject
+                                array(
+                                    '{email}' => Configuration::get('PS_SHOP_EMAIL'), // sender email address
+                                    '{message}' => 'Hi, attached is the csv file...' // email content
+                                ),
+                                $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL, // receiver email address 
+                                NULL, //receiver name
+                                NULL, //from email address
+                                'Abbott Nutricionales',  //from name
+                                array(
+                                    'content' => file_get_contents(_PS_ROOT_DIR_.'/DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'),
+                                    'mime' => 'text/csv',
+                                    'name' => 'DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'
+                                ),
+                                NULL,  //SMTP mode
+                                NULL,  //Mails directory
+                                NULL,  //Die after error?
+                                NULL,  //ID Shop
+                                'alejandro.villegas@farmalisto.com.co',  //BCC
+                                NULL  //Reply to
+                            );
+
+                            if ($email != false) {
+                                self::logtxt("Email enviado exitoso!!");
+                                var_dump('Email enviado exitoso!!');
+
+                                foreach ($orderstoSend as $key => $order) {
+
+                                    // formateo de fecha
+                                    $fechaHora = $order['date_add'];
+                                    $fechaHora2 = explode(' ', $fechaHora);
+                                    $fecha = $fechaHora2[0];
+
+                                    // Insertamos data en ct_transactions_history tabla
+                                    $result =  Db::getInstance()->insert('ct_transactions_history', array(
+                                        'Country__c' => $country,
+                                        'Contact_Num__c' => $order['note'],
+                                        'Payment_Type__c' => $order['payment'],
+                                        'X1_Product__c' => $order['product_name'],
+                                        'X1_Quantity__c' => $order['product_quantity'],
+                                        'X1_Price__c' => (float)$order['product_price'],
+                                        'X1_SKU__c' => $order['product_reference'],
+                                        'Transaction_Date__c' => $fecha,
+                                        'Delivered__c' => 1,
+                                        'Vendor_Order_Id__c' => $order['reference'],
+                                        'Order_Value__c' => (float)$order['total_paid'],
+                                        'Discount_Applied__c' => (float)$order['product_quantity_discount'],
+                                        'Origin__c' => 'eCommerce',
+                                        'Loyalty_Points__c' => 0,
+                                        'created_date' => date("Y-m-d H:i:s"),
+                                    ));
+                                    $error = Db::getInstance()->getMsgError();
+            
+                                    if ($result == true){
+                                        self::logtxt("Registros guardados al history con exito");
+                                        var_dump("Registros guardados al history con exito");
+                                    }else {
+                                        if ($error != ''){
+                                            self::logtxt($error);
+                                        }
+                                        self::logtxt("Hubo un error al intentar guardar en el history");
+                                        var_dump("1-Hubo un error al intentar guardar en el history");
+                                    }
+            
+                                    // var_dump($result);
+
+                                } // fin foreach
+
+                            }else {
+                                self::logtxt("Error, email no pudo ser enviado!!");
+                                var_dump('Error, email no pudo ser enviado!!');
+                            }
 
                         }else{
                             self::logtxt("1-El archivo no existe o no se pudo crear");
