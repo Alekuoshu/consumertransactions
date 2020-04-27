@@ -52,12 +52,14 @@ class Consumertransactions extends Module
 
         if ($this->active && Configuration::get('consumertransactions') == '') {
             $this->warning = $this->l('You have to configure your module');
-           }
+        }
          
-           $this->errors = array();
-           if ($this->CONSUMERTRANSACTIONS_LIVE_MODE == 1) {
-               $this->emailTransactions();
-           }
+        $this->errors = array();
+        if ($this->CONSUMERTRANSACTIONS_LIVE_MODE == 1) {
+            $this->emailTransactions();
+        } else {
+            $this->emailTransactions_Sandbox();
+        }
         // ?k=Alewushu
         // DGLC@nsumerT.2019!
     }
@@ -224,18 +226,17 @@ class Consumertransactions extends Module
   * @param string $text text that will be saved in the file
   * @return void Error record in file "log_errors.log"
   */
-  public static function logtxt($text = "")
-  {
-
-    if (file_exists(CONSUMERTRANSACTIONS_PATH_LOG)) {
-        $fp = fopen(_PS_ROOT_DIR_ . "/modules/consumertransactions/log/log_errors.log", "a+");
-        fwrite($fp, date('l jS \of F Y h:i:s A') . ", " . $text . "\r\n");
-        fclose($fp);
-        return true;
-    } else {
-        self::createPath(CONSUMERTRANSACTIONS_PATH_LOG);
+    public static function logtxt($text = "")
+    {
+        if (file_exists(CONSUMERTRANSACTIONS_PATH_LOG)) {
+            $fp = fopen(_PS_ROOT_DIR_ . "/modules/consumertransactions/log/log_errors.log", "a+");
+            fwrite($fp, date('l jS \of F Y h:i:s A') . ", " . $text . "\r\n");
+            fclose($fp);
+            return true;
+        } else {
+            self::createPath(CONSUMERTRANSACTIONS_PATH_LOG);
+        }
     }
-  }
 
     /**
     * Add the CSS & JavaScript files you want to be loaded in the BO.
@@ -271,20 +272,20 @@ class Consumertransactions extends Module
         if ($this->CONSUMERTRANSACTIONS_LIVE_MODE == 1) {
             $key = $this->CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD;
             
-            if(Tools::getValue('k') == $key){
+            if (Tools::getValue('k') == $key) {
                 
                 // var_dump('funcionando!');
 
                 // obtenemos el lenguaje para saber el pais a enviar
                 $languages = Language::getLanguages(true, $this->context->shop->id);
                 $lang_code = $languages[0]['language_code'];
-                if($lang_code == 'es-co') {
+                if ($lang_code == 'es-co') {
                     $country = 'Colombia';
-                    $iso = 'co';
+                    $iso = 'CO';
                 }
-                if($lang_code == 'es-mx') {
+                if ($lang_code == 'es-mx') {
                     $country = 'México';
-                    $iso = 'mx';
+                    $iso = 'MX';
                 }
 
                 // evalua que el historico este vacio o no
@@ -308,7 +309,7 @@ class Consumertransactions extends Module
                     // var_dump($orderstoSend);
                     // echo "</pre>";
 
-                    if (!empty($orderstoSend)){
+                    if (!empty($orderstoSend)) {
 
                         // var_dump('Nuevos registros...');
 
@@ -319,12 +320,11 @@ class Consumertransactions extends Module
                         
                         // Se crea el archivo CSV
                         $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'w');
-                        if($archivo_csv)
-                        {
+                        if ($archivo_csv) {
                             self::logtxt("1-El archivo se creo exitoso!");
                             // var_dump('1-El archivo se creo exitoso!');
 
-                            fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);  
+                            fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);
 
                             fclose($archivo_csv);
 
@@ -332,19 +332,49 @@ class Consumertransactions extends Module
                                 // creamos los datos a enviar
                                 // formateo de fecha
                                 $fechaHora = $order['date_add'];
-                                $fechaHora2 = explode(' ', $fechaHora);
-                                $fecha = $fechaHora2[0];
+                                $fecha = date('Y-m-d', strtotime($fechaHora));
+
+                                // formatear pagos
+                                $payment = $order['payment'];
+                                if ($payment == 'Openpay SPEI') {
+                                    $paymentType = 'Bank Transfer';
+                                }
+                                if ($payment == 'Openpay pago con tarjeta') {
+                                    $paymentType = 'Credit Card';
+                                }
+                                if ($payment == 'PayPal DIRECT XO') {
+                                    $paymentType = 'Credit Card';
+                                }
+                                if ($payment == 'Openpay cash payment') {
+                                    $paymentType = 'Cash';
+                                }
+                                if ($payment == 'PayU Latam Plus') {
+                                    $paymentType = 'Credit Card';
+                                }
+
+                                // evalua el product_reference para homologar el product name a enviar
+                                $db = Db::getInstance();
+                                $sql = 'SELECT final_name FROM '._DB_PREFIX_.'ct_transactions_homologa WHERE sku_id = "'.trim($order['product_reference']).'"';
+                                $product_name = $db->getValue($sql);
+
+                                // $error = Db::getInstance()->getMsgError();
+
+                                // echo "<pre>";
+                                // var_dump($product_name);
+                                // echo "</pre>";
+                                
         
                                 $data1 = array();
                                 $data1[$key]['Country__c'] = $country;
                                 $data1[$key]['Contact_Num__c'] = $order['note'];
-                                $data1[$key]['Payment_Type__c'] = $order['payment'];
+                                $data1[$key]['Payment_Type__c'] = $paymentType;
                                 $data1[$key]['Comment__c'] = '';
-                                $data1[$key]['X1_Product__c'] = $order['product_name'];
+                                $data1[$key]['X1_Product__c'] = strtoupper($product_name);
+                                // $data1[$key]['X1_Product__c'] = strtoupper($order['product_name']);
                                 $data1[$key]['X1_Quantity__c'] = (int)$order['product_quantity'];
                                 $data1[$key]['X1_Lot__c'] = '';
                                 $data1[$key]['X1_Price__c'] = (float)$order['product_price'];
-                                $data1[$key]['X1_SKU__c'] = $order['product_reference'];
+                                $data1[$key]['X1_SKU__c'] = trim($order['product_reference']);
                                 $data1[$key]['X1_IVA__c'] = '';
                                 $data1[$key]['X2_Product__c'] = '';
                                 $data1[$key]['X2_Quantity__c'] = '';
@@ -381,7 +411,7 @@ class Consumertransactions extends Module
                                 $data1[$key]['Comment_Alternative_Address__c'] = '';
                                 $data1[$key]['Comment_Other__c'] = '';
                                 $data1[$key]['Delivered__c'] = 1;
-                                $data1[$key]['Vendor_Order_Id__c'] = $order['reference'];
+                                $data1[$key]['Vendor_Order_Id__c'] = trim($order['reference']);
                                 $data1[$key]['Order_Value__c'] = (float)$order['total_paid'];
                                 $data1[$key]['Discount_Applied__c'] = (float)$order['product_quantity_discount'];
                                 $data1[$key]['Origin__c'] = 'eCommerce';
@@ -399,23 +429,20 @@ class Consumertransactions extends Module
                                 // echo "</pre>";
                                 
                                 $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'a');
-                                if($archivo_csv)
-                                {
+                                if ($archivo_csv) {
                                     $updateFile = fputs($archivo_csv, $values.PHP_EOL);
                                     fclose($archivo_csv);
                                     if ($updateFile == true) {
                                         self::logtxt("2-El archivo se actualizo!");
-                                        // var_dump('2-El archivo se actualizo!');
-                                    }else {
+                                    // var_dump('2-El archivo se actualizo!');
+                                    } else {
                                         self::logtxt("2-El archivo no se pudo actualizar!");
                                         // var_dump('2-El archivo no se pudo actualizar!');
                                     }
-                                }else{
+                                } else {
                                     self::logtxt("2-El archivo no existe");
                                     // var_dump('2-El archivo no existe');
                                 }
-        
-        
                             } // fin foreach orderstoSend
 
                             // Envio del archivo por correo
@@ -427,21 +454,21 @@ class Consumertransactions extends Module
                                     '{email}' => Configuration::get('PS_SHOP_EMAIL'), // sender email address
                                     '{message}' => 'Hi, attached is the csv file...' // email content
                                 ),
-                                $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL, // receiver email address 
-                                NULL, //receiver name
-                                NULL, //from email address
+                                $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL, // receiver email address
+                                null, //receiver name
+                                null, //from email address
                                 'Abbott Nutricionales',  //from name
                                 array(
                                     'content' => file_get_contents(_PS_ROOT_DIR_.'/DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'),
                                     'mime' => 'text/csv',
                                     'name' => 'DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'
                                 ),
-                                NULL,  //SMTP mode
-                                NULL,  //Mails directory
-                                NULL,  //Die after error?
-                                NULL,  //ID Shop
+                                null,  //SMTP mode
+                                null,  //Mails directory
+                                null,  //Die after error?
+                                null,  //ID Shop
                                 'alejandro.villegas@farmalisto.com.co',  //BCC
-                                NULL  //Reply to
+                                null  //Reply to
                             );
 
                             if ($email != false) {
@@ -452,8 +479,7 @@ class Consumertransactions extends Module
 
                                     // formateo de fecha
                                     $fechaHora = $order['date_add'];
-                                    $fechaHora2 = explode(' ', $fechaHora);
-                                    $fecha = $fechaHora2[0];
+                                    $fecha = date('Y-m-d', strtotime($fechaHora));
 
                                     // Insertamos data en ct_transactions_history tabla
                                     $result =  Db::getInstance()->insert('ct_transactions_history', array(
@@ -475,11 +501,11 @@ class Consumertransactions extends Module
                                     ));
                                     $error = Db::getInstance()->getMsgError();
             
-                                    if ($result == true){
+                                    if ($result == true) {
                                         self::logtxt("Registros guardados al history con exito");
-                                        // var_dump("Registros guardados al history con exito");
-                                    }else {
-                                        if ($error != ''){
+                                    // var_dump("Registros guardados al history con exito");
+                                    } else {
+                                        if ($error != '') {
                                             self::logtxt($error);
                                         }
                                         self::logtxt("Hubo un error al intentar guardar en el history");
@@ -487,26 +513,19 @@ class Consumertransactions extends Module
                                     }
             
                                     // var_dump($result);
-
                                 } // fin foreach
-
-                            }else {
+                            } else {
                                 self::logtxt("Error, email no pudo ser enviado!!");
                                 // var_dump('Error, email no pudo ser enviado!!');
                             }
-
-                        }else{
+                        } else {
                             self::logtxt("1-El archivo no existe o no se pudo crear");
                             // var_dump('1-El archivo no existe o no se pudo crear');
                         }
-
-
-                    }else {
+                    } else {
                         self::logtxt("No hay registros para enviar...");
                         // var_dump('No hay registros para enviar...');
                     }
-
-
                 } else {
                     # si hay registros en el historico
 
@@ -524,7 +543,7 @@ class Consumertransactions extends Module
                     // var_dump($orderstoSend);
                     // echo "</pre>";
 
-                    if (!empty($orderstoSend)){
+                    if (!empty($orderstoSend)) {
 
                         // var_dump('Nuevos registros...');
 
@@ -535,12 +554,11 @@ class Consumertransactions extends Module
                         
                         // Se crea el archivo CSV
                         $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'w');
-                        if($archivo_csv)
-                        {
+                        if ($archivo_csv) {
                             self::logtxt("1-El archivo se creo exitoso!");
                             // var_dump('1-El archivo se creo exitoso!');
 
-                            fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);  
+                            fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);
 
                             fclose($archivo_csv);
 
@@ -548,15 +566,44 @@ class Consumertransactions extends Module
                                 // creamos los datos a enviar
                                 // formateo de fecha
                                 $fechaHora = $order['date_add'];
-                                $fechaHora2 = explode(' ', $fechaHora);
-                                $fecha = $fechaHora2[0];
+                                $fecha = date('Y-m-d', strtotime($fechaHora));
+
+                                // formatear pagos
+                                $payment = $order['payment'];
+                                if ($payment == 'Openpay SPEI') {
+                                    $paymentType = 'Bank Transfer';
+                                }
+                                if ($payment == 'Openpay pago con tarjeta') {
+                                    $paymentType = 'Credit Card';
+                                }
+                                if ($payment == 'PayPal DIRECT XO') {
+                                    $paymentType = 'Credit Card';
+                                }
+                                if ($payment == 'Openpay cash payment') {
+                                    $paymentType = 'Cash';
+                                }
+                                if ($payment == 'PayU Latam Plus') {
+                                    $paymentType = 'Credit Card';
+                                }
+
+                                // evalua el product_reference para homologar el product name a enviar
+                                $db = Db::getInstance();
+                                $sql = 'SELECT final_name FROM '._DB_PREFIX_.'ct_transactions_homologa WHERE sku_id = "'.trim($order['product_reference']).'"';
+                                $product_name = $db->getValue($sql);
+
+                                // $error = Db::getInstance()->getMsgError();
+
+                                // echo "<pre>";
+                                // var_dump($product_name);
+                                // echo "</pre>";
         
                                 $data2 = array();
                                 $data2[$key]['Country__c'] = $country;
                                 $data2[$key]['Contact_Num__c'] = $order['note'];
-                                $data2[$key]['Payment_Type__c'] = $order['payment'];
+                                $data2[$key]['Payment_Type__c'] = $paymentType;
                                 $data2[$key]['Comment__c'] = '';
-                                $data2[$key]['X1_Product__c'] = $order['product_name'];
+                                $data2[$key]['X1_Product__c'] = strtoupper($product_name);
+                                // $data2[$key]['X1_Product__c'] = strtoupper($order['product_name']);
                                 $data2[$key]['X1_Quantity__c'] = (int)$order['product_quantity'];
                                 $data2[$key]['X1_Lot__c'] = '';
                                 $data2[$key]['X1_Price__c'] = (float)$order['product_price'];
@@ -615,22 +662,20 @@ class Consumertransactions extends Module
                                 // echo "</pre>";
 
                                 $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'a');
-                                if($archivo_csv)
-                                {
+                                if ($archivo_csv) {
                                     $updateFile = fputs($archivo_csv, $values.PHP_EOL);
                                     fclose($archivo_csv);
                                     if ($updateFile == true) {
                                         self::logtxt("2-El archivo se actualizo!");
-                                        // var_dump('2-El archivo se actualizo!');
-                                    }else {
+                                    // var_dump('2-El archivo se actualizo!');
+                                    } else {
                                         self::logtxt("2-El archivo no se pudo actualizar!");
                                         // var_dump('2-El archivo no se pudo actualizar!');
                                     }
-                                }else{
+                                } else {
                                     self::logtxt("2-El archivo no existe");
                                     // var_dump('2-El archivo no existe');
                                 }
-        
                             } // fin foreach orderstoSend
 
                             // Envio del archivo por correo
@@ -642,21 +687,21 @@ class Consumertransactions extends Module
                                     '{email}' => Configuration::get('PS_SHOP_EMAIL'), // sender email address
                                     '{message}' => 'Hi, attached is the csv file...' // email content
                                 ),
-                                $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL, // receiver email address 
-                                NULL, //receiver name
-                                NULL, //from email address
+                                $this->CONSUMERTRANSACTIONS_ACCOUNT_EMAIL, // receiver email address
+                                null, //receiver name
+                                null, //from email address
                                 'Abbott Nutricionales',  //from name
                                 array(
                                     'content' => file_get_contents(_PS_ROOT_DIR_.'/DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'),
                                     'mime' => 'text/csv',
                                     'name' => 'DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv'
                                 ),
-                                NULL,  //SMTP mode
-                                NULL,  //Mails directory
-                                NULL,  //Die after error?
-                                NULL,  //ID Shop
+                                null,  //SMTP mode
+                                null,  //Mails directory
+                                null,  //Die after error?
+                                null,  //ID Shop
                                 'alejandro.villegas@farmalisto.com.co',  //BCC
-                                NULL  //Reply to
+                                null  //Reply to
                             );
 
                             if ($email != false) {
@@ -667,8 +712,7 @@ class Consumertransactions extends Module
 
                                     // formateo de fecha
                                     $fechaHora = $order['date_add'];
-                                    $fechaHora2 = explode(' ', $fechaHora);
-                                    $fecha = $fechaHora2[0];
+                                    $fecha = date('Y-m-d', strtotime($fechaHora));
 
                                     // Insertamos data en ct_transactions_history tabla
                                     $result =  Db::getInstance()->insert('ct_transactions_history', array(
@@ -690,11 +734,11 @@ class Consumertransactions extends Module
                                     ));
                                     $error = Db::getInstance()->getMsgError();
             
-                                    if ($result == true){
+                                    if ($result == true) {
                                         self::logtxt("Registros guardados al history con exito");
-                                        // var_dump("Registros guardados al history con exito");
-                                    }else {
-                                        if ($error != ''){
+                                    // var_dump("Registros guardados al history con exito");
+                                    } else {
+                                        if ($error != '') {
                                             self::logtxt($error);
                                         }
                                         self::logtxt("Hubo un error al intentar guardar en el history");
@@ -702,33 +746,376 @@ class Consumertransactions extends Module
                                     }
             
                                     // var_dump($result);
-
                                 } // fin foreach
-
-                            }else {
+                            } else {
                                 self::logtxt("Error, email no pudo ser enviado!!");
                                 // var_dump('Error, email no pudo ser enviado!!');
                             }
-
-                        }else{
+                        } else {
                             self::logtxt("1-El archivo no existe o no se pudo crear");
                             // var_dump('1-El archivo no existe o no se pudo crear');
                         }
-
-                    }else {
+                    } else {
                         self::logtxt("No hay nuevos registros para enviar...");
                         // var_dump('No hay nuevos registros para enviar...');
                     }
-
-
                 } // fin si o no hay registros en el historico
-                
-                
-            }else {
+            } else {
                 // var_dump('no funcional!');
             } // fin si o no la url viene con una llave
-
         } // fin si el modulo esta en live
+    } // fin function
+
+    /**
+     * This function is for testing emailTransactions function
+     */
+    public function emailTransactions_Sandbox()
+    {
+        self::logtxt("....Iniciando modo pruebas....");
+        $key = $this->CONSUMERTRANSACTIONS_ACCOUNT_PASSWORD;
+            
+        if (Tools::getValue('k') == $key) {
+                
+                // var_dump('funcionando!');
+
+            // obtenemos el lenguaje para saber el pais a enviar
+            $languages = Language::getLanguages(true, $this->context->shop->id);
+            $lang_code = $languages[0]['language_code'];
+            if ($lang_code == 'es-co') {
+                $country = 'Colombia';
+                $iso = 'CO';
+            }
+            if ($lang_code == 'es-mx') {
+                $country = 'México';
+                $iso = 'MX';
+            }
+
+            // evalua que el historico este vacio o no
+            $db = Db::getInstance();
+            $sql = 'SELECT * FROM '._DB_PREFIX_.'ct_transactions_history';
+            $history = $db->getValue($sql);
+
+            // history vacio
+            if ($history == false) {
+
+                    // obtenemos las ordenes para enviar el primer reporte
+                $sql = new DbQuery();
+                $sql->select('A.id_order, A.reference, A.id_customer, A.total_paid, A.date_add, A.payment, B.note, C.product_name, C.product_quantity, C.product_price, C.product_reference, C.product_quantity_discount');
+                $sql->from('orders', 'A');
+                $sql->innerJoin('customer', 'B', 'A.id_customer = B.id_customer');
+                $sql->innerJoin('order_detail', 'C', 'A.id_order = C.id_order');
+                $sql->where('A.current_state = 5');
+                $orderstoSend = Db::getInstance()->executeS($sql);
+
+                // echo "<pre>";
+                // var_dump($orderstoSend);
+                // echo "</pre>";
+
+                if (!empty($orderstoSend)) {
+
+                        // var_dump('Nuevos registros...');
+
+                    // si no existe se crea el directorio para guardar los reportes
+                    if (!file_exists('DGL')) {
+                        $dir = mkdir("DGL", 0777);
+                    }
+                        
+                    // Se crea el archivo CSV
+                    $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'w');
+                    if ($archivo_csv) {
+                        self::logtxt("1-El archivo se creo exitoso!");
+                        // var_dump('1-El archivo se creo exitoso!');
+
+                        fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);
+
+                        fclose($archivo_csv);
+
+                        foreach ($orderstoSend as $key => $order) {
+                            // creamos los datos a enviar
+                            // formateo de fecha
+                            $fechaHora = $order['date_add'];
+                            $fecha = date('Y-m-d', strtotime($fechaHora));
+
+                            // formatear pagos
+                            $payment = $order['payment'];
+                            if ($payment == 'Openpay SPEI') {
+                                $paymentType = 'Bank Transfer';
+                            }
+                            if ($payment == 'Openpay pago con tarjeta') {
+                                $paymentType = 'Credit Card';
+                            }
+                            if ($payment == 'PayPal DIRECT XO') {
+                                $paymentType = 'Credit Card';
+                            }
+                            if ($payment == 'Openpay cash payment') {
+                                $paymentType = 'Cash';
+                            }
+                            if ($payment == 'PayU Latam Plus') {
+                                $paymentType = 'Credit Card';
+                            }
+
+                            // evalua el product_reference para homologar el product name a enviar
+                            $db = Db::getInstance();
+                            $sql = 'SELECT final_name FROM '._DB_PREFIX_.'ct_transactions_homologa WHERE sku_id = "'.trim($order['product_reference']).'"';
+                            $product_name = $db->getValue($sql);
+
+                            // $error = Db::getInstance()->getMsgError();
+
+                            // echo "<pre>";
+                            // var_dump($product_name);
+                            // echo "</pre>";
+                                
         
+                            $data1 = array();
+                            $data1[$key]['Country__c'] = $country;
+                            $data1[$key]['Contact_Num__c'] = $order['note'];
+                            $data1[$key]['Payment_Type__c'] = $paymentType;
+                            $data1[$key]['Comment__c'] = '';
+                            $data1[$key]['X1_Product__c'] = strtoupper($product_name);
+                            // $data1[$key]['X1_Product__c'] = strtoupper($order['product_name']);
+                            $data1[$key]['X1_Quantity__c'] = (int)$order['product_quantity'];
+                            $data1[$key]['X1_Lot__c'] = '';
+                            $data1[$key]['X1_Price__c'] = (float)$order['product_price'];
+                            $data1[$key]['X1_SKU__c'] = trim($order['product_reference']);
+                            $data1[$key]['X1_IVA__c'] = '';
+                            $data1[$key]['X2_Product__c'] = '';
+                            $data1[$key]['X2_Quantity__c'] = '';
+                            $data1[$key]['X2_Lot__c'] = '';
+                            $data1[$key]['X2_Price__c'] = '';
+                            $data1[$key]['X2_SKU__c'] = '';
+                            $data1[$key]['X2_IVA__c'] = '';
+                            $data1[$key]['X3_Product__c'] = '';
+                            $data1[$key]['X3_Quantity__c'] = '';
+                            $data1[$key]['X3_Lot__c'] = '';
+                            $data1[$key]['X3_Price__c'] = '';
+                            $data1[$key]['X3_SKU__c'] = '';
+                            $data1[$key]['X3_IVA__c'] = '';
+                            $data1[$key]['X4_Product__c'] = '';
+                            $data1[$key]['X4_Quantity__c'] = '';
+                            $data1[$key]['X4_Lot__c'] = '';
+                            $data1[$key]['X4_Price__c'] = '';
+                            $data1[$key]['X4_SKU__c'] = '';
+                            $data1[$key]['X4_IVA__c'] = '';
+                            $data1[$key]['X5_Product__c'] = '';
+                            $data1[$key]['X5_Quantity__c'] = '';
+                            $data1[$key]['X5_Lot__c'] = '';
+                            $data1[$key]['X5_Price__c'] = '';
+                            $data1[$key]['X5_SKU__c'] = '';
+                            $data1[$key]['X5_IVA__c'] = '';
+                            $data1[$key]['X6_Product__c'] = '';
+                            $data1[$key]['X6_Quantity__c'] = '';
+                            $data1[$key]['X6_Lot__c'] = '';
+                            $data1[$key]['X6_Price__c'] = '';
+                            $data1[$key]['X6_SKU__c'] = '';
+                            $data1[$key]['X6_IVA__c'] = '';
+                            $data1[$key]['Delivery_Time__c'] = '';
+                            $data1[$key]['Transaction_Date__c'] = $fecha;
+                            $data1[$key]['Comment_Alternative_Address__c'] = '';
+                            $data1[$key]['Comment_Other__c'] = '';
+                            $data1[$key]['Delivered__c'] = 1;
+                            $data1[$key]['Vendor_Order_Id__c'] = trim($order['reference']);
+                            $data1[$key]['Order_Value__c'] = (float)$order['total_paid'];
+                            $data1[$key]['Discount_Applied__c'] = (float)$order['product_quantity_discount'];
+                            $data1[$key]['Origin__c'] = 'eCommerce';
+                            $data1[$key]['Loyalty_Points__c'] = 0;
+    
+                            echo "<pre>";
+                            var_dump($data1);
+                            echo "</pre>";
+                                
+                            // ingresando la data al archivo csv
+                            $values = implode(',', $data1[$key]);
+
+                            // echo "<pre>";
+                            // var_dump($values);
+                            // echo "</pre>";
+                                
+                            $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'a');
+                            if ($archivo_csv) {
+                                $updateFile = fputs($archivo_csv, $values.PHP_EOL);
+                                fclose($archivo_csv);
+                                if ($updateFile == true) {
+                                    self::logtxt("2-El archivo se actualizo!");
+                                // var_dump('2-El archivo se actualizo!');
+                                } else {
+                                    self::logtxt("2-El archivo no se pudo actualizar!");
+                                    // var_dump('2-El archivo no se pudo actualizar!');
+                                }
+                            } else {
+                                self::logtxt("2-El archivo no existe");
+                                // var_dump('2-El archivo no existe');
+                            }
+                        } // fin foreach orderstoSend
+                    } else {
+                        self::logtxt("1-El archivo no existe o no se pudo crear");
+                        // var_dump('1-El archivo no existe o no se pudo crear');
+                    }
+                } else {
+                    self::logtxt("No hay registros para enviar...");
+                    // var_dump('No hay registros para enviar...');
+                }
+            } else {
+                # si hay registros en el historico
+
+                // obtenemos las nuevas ordenes a enviar que no esten en el historico
+                $sql = new DbQuery();
+                $sql->select('A.id_order, A.reference, A.id_customer, A.total_paid, A.date_add, A.payment, B.note, C.product_name, C.product_quantity, C.product_price, C.product_reference, C.product_quantity_discount');
+                $sql->from('orders', 'A');
+                $sql->innerJoin('customer', 'B', 'A.id_customer = B.id_customer');
+                $sql->innerJoin('order_detail', 'C', 'A.id_order = C.id_order');
+                $sql->where('A.current_state = 5 AND NOT EXISTS (SELECT Vendor_Order_Id__c FROM ps_ct_transactions_history WHERE Vendor_Order_Id__c = A.reference)');
+                $orderstoSend = Db::getInstance()->executeS($sql);
+                // $error = Db::getInstance()->getMsgError();
+
+                // echo "<pre>";
+                // var_dump($orderstoSend);
+                // echo "</pre>";
+
+                if (!empty($orderstoSend)) {
+
+                        // var_dump('Nuevos registros...');
+
+                    // si no existe se crea el directorio para guardar los reportes
+                    if (!file_exists('DGL')) {
+                        $dir = mkdir("DGL", 0777);
+                    }
+                        
+                    // Se crea el archivo CSV
+                    $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'w');
+                    if ($archivo_csv) {
+                        self::logtxt("1-El archivo se creo exitoso!");
+                        // var_dump('1-El archivo se creo exitoso!');
+
+                        fputs($archivo_csv, "Country__c,Contact_Num__c,Payment_Type__c,Comment__c,X1_Product__c,X1_Quantity__c,X1_Lot__c,X1_Price__c,X1_SKU__c,X1_IVA__c,X2_Product__c,X2_Quantity__c,X2_Lot__c,X2_Price__c,X2_SKU__c,X2_IVA__c,X3_Product__c,X3_Quantity__c,X3_Lot__c,X3_Price__c,X3_SKU__c,X3_IVA__c,X4_Product__c,X4_Quantity__c,X4_Lot__c,X4_Price__c,X4_SKU__c,X4_IVA__c,X5_Product__c,X5_Quantity__c,X5_Lot__c,X5_Price__c,X5_SKU__c,X5_IVA__c,X6_Product__c,X6_Quantity__c,X6_Lot__c,X6_Price__c,X6_SKU__c,X6_IVA__c,Delivery_Time__c,Transaction_Date__c,Comment_Alternative_Address__c,Comment_Other__c,Delivered__c,Vendor_Order_Id__c,Order_Value__c,Discount_Applied__c,Origin__c,Loyalty_Points__c".PHP_EOL);
+
+                        fclose($archivo_csv);
+
+                        foreach ($orderstoSend as $key => $order) {
+                            // creamos los datos a enviar
+                            // formateo de fecha
+                            $fechaHora = $order['date_add'];
+                            $fecha = date('Y-m-d', strtotime($fechaHora));
+
+                            // formatear pagos
+                            $payment = $order['payment'];
+                            if ($payment == 'Openpay SPEI') {
+                                $paymentType = 'Bank Transfer';
+                            }
+                            if ($payment == 'Openpay pago con tarjeta') {
+                                $paymentType = 'Credit Card';
+                            }
+                            if ($payment == 'PayPal DIRECT XO') {
+                                $paymentType = 'Credit Card';
+                            }
+                            if ($payment == 'Openpay cash payment') {
+                                $paymentType = 'Cash';
+                            }
+                            if ($payment == 'PayU Latam Plus') {
+                                $paymentType = 'Credit Card';
+                            }
+
+                            // evalua el product_reference para homologar el product name a enviar
+                            $db = Db::getInstance();
+                            $sql = 'SELECT final_name FROM '._DB_PREFIX_.'ct_transactions_homologa WHERE sku_id = "'.trim($order['product_reference']).'"';
+                            $product_name = $db->getValue($sql);
+
+                            // $error = Db::getInstance()->getMsgError();
+
+                            // echo "<pre>";
+                            // var_dump($product_name);
+                            // echo "</pre>";
+        
+                            $data2 = array();
+                            $data2[$key]['Country__c'] = $country;
+                            $data2[$key]['Contact_Num__c'] = $order['note'];
+                            $data2[$key]['Payment_Type__c'] = $paymentType;
+                            $data2[$key]['Comment__c'] = '';
+                            $data2[$key]['X1_Product__c'] = strtoupper($product_name);
+                            // $data2[$key]['X1_Product__c'] = strtoupper($order['product_name']);
+                            $data2[$key]['X1_Quantity__c'] = (int)$order['product_quantity'];
+                            $data2[$key]['X1_Lot__c'] = '';
+                            $data2[$key]['X1_Price__c'] = (float)$order['product_price'];
+                            $data2[$key]['X1_SKU__c'] = $order['product_reference'];
+                            $data2[$key]['X1_IVA__c'] = '';
+                            $data2[$key]['X2_Product__c'] = '';
+                            $data2[$key]['X2_Quantity__c'] = '';
+                            $data2[$key]['X2_Lot__c'] = '';
+                            $data2[$key]['X2_Price__c'] = '';
+                            $data2[$key]['X2_SKU__c'] = '';
+                            $data2[$key]['X2_IVA__c'] = '';
+                            $data2[$key]['X3_Product__c'] = '';
+                            $data2[$key]['X3_Quantity__c'] = '';
+                            $data2[$key]['X3_Lot__c'] = '';
+                            $data2[$key]['X3_Price__c'] = '';
+                            $data2[$key]['X3_SKU__c'] = '';
+                            $data2[$key]['X3_IVA__c'] = '';
+                            $data2[$key]['X4_Product__c'] = '';
+                            $data2[$key]['X4_Quantity__c'] = '';
+                            $data2[$key]['X4_Lot__c'] = '';
+                            $data2[$key]['X4_Price__c'] = '';
+                            $data2[$key]['X4_SKU__c'] = '';
+                            $data2[$key]['X4_IVA__c'] = '';
+                            $data2[$key]['X5_Product__c'] = '';
+                            $data2[$key]['X5_Quantity__c'] = '';
+                            $data2[$key]['X5_Lot__c'] = '';
+                            $data2[$key]['X5_Price__c'] = '';
+                            $data2[$key]['X5_SKU__c'] = '';
+                            $data2[$key]['X5_IVA__c'] = '';
+                            $data2[$key]['X6_Product__c'] = '';
+                            $data2[$key]['X6_Quantity__c'] = '';
+                            $data2[$key]['X6_Lot__c'] = '';
+                            $data2[$key]['X6_Price__c'] = '';
+                            $data2[$key]['X6_SKU__c'] = '';
+                            $data2[$key]['X6_IVA__c'] = '';
+                            $data2[$key]['Delivery_Time__c'] = '';
+                            $data2[$key]['Transaction_Date__c'] = $fecha;
+                            $data2[$key]['Comment_Alternative_Address__c'] = '';
+                            $data2[$key]['Comment_Other__c'] = '';
+                            $data2[$key]['Delivered__c'] = 1;
+                            $data2[$key]['Vendor_Order_Id__c'] = $order['reference'];
+                            $data2[$key]['Order_Value__c'] = (float)$order['total_paid'];
+                            $data2[$key]['Discount_Applied__c'] = (float)$order['product_quantity_discount'];
+                            $data2[$key]['Origin__c'] = 'eCommerce';
+                            $data2[$key]['Loyalty_Points__c'] = 0;
+    
+                            echo "<pre>";
+                            var_dump($data2);
+                            echo "</pre>";
+                                
+                            // ingresando la data al archivo csv
+                            $values = implode(',', $data2[$key]);
+
+                            // echo "<pre>";
+                            // var_dump($values);
+                            // echo "</pre>";
+
+                            $archivo_csv = fopen('DGL/DGL_Consumer_Transaction_'.$iso.'_'.date("Y-m-d").'.csv', 'a');
+                            if ($archivo_csv) {
+                                $updateFile = fputs($archivo_csv, $values.PHP_EOL);
+                                fclose($archivo_csv);
+                                if ($updateFile == true) {
+                                    self::logtxt("2-El archivo se actualizo!");
+                                // var_dump('2-El archivo se actualizo!');
+                                } else {
+                                    self::logtxt("2-El archivo no se pudo actualizar!");
+                                    // var_dump('2-El archivo no se pudo actualizar!');
+                                }
+                            } else {
+                                self::logtxt("2-El archivo no existe");
+                                // var_dump('2-El archivo no existe');
+                            }
+                        } // fin foreach orderstoSend
+                    } else {
+                        self::logtxt("1-El archivo no existe o no se pudo crear");
+                        // var_dump('1-El archivo no existe o no se pudo crear');
+                    }
+                } else {
+                    self::logtxt("No hay nuevos registros para enviar...");
+                    // var_dump('No hay nuevos registros para enviar...');
+                }
+            } // fin si o no hay registros en el historico
+        } else {
+            // var_dump('no funcional!');
+        } // fin si o no la url viene con una llave
     } // fin function
 }
